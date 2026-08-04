@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0F2340" />
+<title>Lombok Biru - Prices</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ============ SETUP ============ -->
+<div id="setupScreen" class="setup hidden">
+  <img src="icons/icon-192.png" alt="" class="setup-logo" />
+  <h1>Lombok Biru</h1>
+  <p class="setup-sub">Supplier prices</p>
+  <p class="setup-text">Paste the two values Mathieu sent you to connect to the shared price list.</p>
+  <label>Database address</label>
+  <input type="url" id="setupUrl" placeholder="https://xxxxx.supabase.co" autocapitalize="off" autocorrect="off" spellcheck="false" />
+  <label>Access key</label>
+  <input type="text" id="setupKey" placeholder="eyJhbGciOi..." autocapitalize="off" autocorrect="off" spellcheck="false" />
+  <p id="setupError" class="setup-error hidden"></p>
+  <button class="btn btn-primary btn-block" id="setupBtn">Connect</button>
+</div>
+
+<!-- ============ NAME ============ -->
+<div id="nameScreen" class="setup hidden">
+  <img src="icons/icon-192.png" alt="" class="setup-logo" />
+  <h1>Your name</h1>
+  <p class="setup-text">Shown next to prices you add or change, so the team knows who updated what.</p>
+  <label>First name</label>
+  <input type="text" id="nameInput" placeholder="e.g. Budi" />
+  <button class="btn btn-primary btn-block" id="nameBtn">Continue</button>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app hidden">
+
+  <div id="offlineBar" class="offline-bar hidden">
+    <span class="offline-dot"></span>
+    <span id="offlineText">No connection</span>
+    <button id="retryBtn" class="offline-retry">Retry</button>
+  </div>
+
+  <!-- ---- PRICES ---- -->
+  <section class="screen" id="screen-prices">
+    <header class="topbar">
+      <h1>Prices</h1>
+      <button class="icon-btn" id="refreshPrices" aria-label="Refresh">&#8635;</button>
+    </header>
+    <div class="searchbar">
+      <input type="search" id="priceSearch" placeholder="Search item, supplier, category" />
+    </div>
+    <div class="list" id="priceList"></div>
+    <div class="empty hidden" id="priceEmpty">No prices yet.</div>
+  </section>
+
+  <!-- ---- SUPPLIERS ---- -->
+  <section class="screen hidden" id="screen-suppliers">
+    <header class="topbar">
+      <h1>Suppliers</h1>
+      <button class="icon-btn" id="refreshSuppliers" aria-label="Refresh">&#8635;</button>
+    </header>
+    <div class="searchbar">
+      <input type="search" id="supplierSearch" placeholder="Search name or category" />
+    </div>
+    <div class="list" id="supplierList"></div>
+    <div class="empty hidden" id="supplierEmpty">No suppliers yet.</div>
+  </section>
+
+  <!-- ---- HISTORY ---- -->
+  <section class="screen hidden" id="screen-history">
+    <header class="topbar">
+      <h1>History</h1>
+      <button class="icon-btn" id="refreshHistory" aria-label="Refresh">&#8635;</button>
+    </header>
+    <div class="list" id="historyList"></div>
+    <div class="empty hidden" id="historyEmpty">Nothing logged yet.</div>
+  </section>
+
+  <button class="fab" id="fab" aria-label="Add">+</button>
+
+  <nav class="tabbar">
+    <button class="tab active" data-screen="prices">
+      <span class="tab-icon">&#9776;</span><span>Prices</span>
+    </button>
+    <button class="tab" data-screen="suppliers">
+      <span class="tab-icon">&#9673;</span><span>Suppliers</span>
+    </button>
+    <button class="tab" data-screen="history">
+      <span class="tab-icon">&#8635;</span><span>History</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============ PRICE DETAIL ============ -->
+<div class="sheet hidden" id="priceDetail">
+  <header class="sheet-bar">
+    <button class="sheet-close" data-close="priceDetail">&#8592;</button>
+    <h2>Price</h2>
+  </header>
+  <div class="sheet-body" id="priceDetailBody"></div>
+  <div class="sheet-actions">
+    <button class="btn btn-ghost btn-half" id="detailEdit">Edit</button>
+    <button class="btn btn-danger btn-half" id="detailDelete">Delete</button>
+  </div>
+</div>
+
+<!-- ============ PRICE FORM ============ -->
+<div class="sheet hidden" id="priceForm">
+  <header class="sheet-bar">
+    <button class="sheet-close" data-close="priceForm">&#10005;</button>
+    <h2 id="priceFormTitle">Add a price</h2>
+  </header>
+  <div class="sheet-body">
+    <label>Item description</label>
+    <input type="text" id="fDescription" placeholder="e.g. Bata ringan 10cm 60x30x10" />
+
+    <label>Supplier</label>
+    <select id="fSupplier"></select>
+
+    <label>Unit price</label>
+    <input type="number" inputmode="numeric" id="fPrice" placeholder="0" />
+
+    <div class="row-2">
+      <div>
+        <label>Currency</label>
+        <select id="fCurrency">
+          <option>IDR</option>
+          <option>USD</option>
+        </select>
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="fUnit">
+          <option>m2</option><option>m3</option><option>ml</option>
+          <option>kg</option><option>bag</option><option>piece</option>
+          <option>lot</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Category</label>
+    <select id="fCategory">
+      <option>Structural work</option>
+      <option>Masonry/Partitions</option>
+      <option>Roofing</option>
+      <option>Carpentry/Joinery</option>
+      <option>Plumbing</option>
+      <option>Electrical</option>
+      <option>Finishing/Painting</option>
+      <option>Furniture/Equipment</option>
+      <option>Exterior/Landscaping</option>
+      <option>Other</option>
+    </select>
+
+    <label>Link / Reference</label>
+    <input type="url" id="fLink" placeholder="https://..." autocapitalize="off" />
+
+    <label>Notes</label>
+    <textarea id="fNotes" rows="3"></textarea>
+  </div>
+  <div class="sheet-actions">
+    <button class="btn btn-primary btn-block" id="priceSave">Save</button>
+  </div>
+</div>
+
+<!-- ============ SUPPLIER FORM ============ -->
+<div class="sheet hidden" id="supplierForm">
+  <header class="sheet-bar">
+    <button class="sheet-close" data-close="supplierForm">&#10005;</button>
+    <h2 id="supplierFormTitle">Add a supplier</h2>
+  </header>
+  <div class="sheet-body">
+    <label>Supplier name</label>
+    <input type="text" id="sName" placeholder="e.g. Toko Bangunan Jaya" />
+
+    <label>Main category</label>
+    <select id="sCategory">
+      <option>Structural work</option>
+      <option>Masonry/Partitions</option>
+      <option>Roofing</option>
+      <option>Carpentry/Joinery</option>
+      <option>Plumbing</option>
+      <option>Electrical</option>
+      <option>Finishing/Painting</option>
+      <option>Furniture/Equipment</option>
+      <option>Exterior/Landscaping</option>
+      <option>Other</option>
+    </select>
+
+    <label>Contact</label>
+    <input type="text" id="sContact" placeholder="e.g. Pak Budi" />
+
+    <label>Phone / WhatsApp</label>
+    <input type="tel" id="sPhone" placeholder="+62 ..." />
+
+    <label>Notes</label>
+    <textarea id="sNotes" rows="3"></textarea>
+  </div>
+  <div class="sheet-actions">
+    <button class="btn btn-ghost btn-half hidden" id="supplierDelete">Delete</button>
+    <button class="btn btn-primary btn-half" id="supplierSave">Save</button>
+  </div>
+</div>
+
+<!-- ============ CONFIRM ============ -->
+<div class="dialog-overlay hidden" id="confirmOverlay">
+  <div class="dialog">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost btn-half" id="confirmNo">Cancel</button>
+      <button class="btn btn-danger btn-half" id="confirmYes">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
